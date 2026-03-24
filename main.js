@@ -100,11 +100,16 @@ function initDragSystem() {
     const minVisiblePx = 20;
 
     artifacts.forEach(artifact => {
+        const rect = artifact.getBoundingClientRect();
+        artifact.style.left = rect.left + 'px';
+        artifact.style.top = rect.top + 'px';
+    });
+
+    artifacts.forEach(artifact => {
         let mouseDownPos = null;
-        let hasMoved = false;
 
         artifact.addEventListener('mousedown', function(e) {
-            if (e.target.closest('a') && e.target.closest('a') !== artifact) {
+            if (e.target.closest('a:not(.artifact)') || e.target.closest('button')) {
                 return;
             }
 
@@ -112,11 +117,12 @@ function initDragSystem() {
             dragState = {
                 element: artifact,
                 offsetX: e.clientX - rect.left,
-                offsetY: e.clientY - rect.top
+                offsetY: e.clientY - rect.top,
+                startX: e.clientX,
+                startY: e.clientY
             };
 
             mouseDownPos = { x: e.clientX, y: e.clientY };
-            hasMoved = false;
 
             artifact.style.zIndex = ++zCounter;
             artifact.classList.add('dragging');
@@ -126,7 +132,7 @@ function initDragSystem() {
         });
 
         artifact.addEventListener('touchstart', function(e) {
-            if (e.target.closest('a') && e.target.closest('a') !== artifact) {
+            if (e.target.closest('a:not(.artifact)') || e.target.closest('button')) {
                 return;
             }
 
@@ -135,11 +141,12 @@ function initDragSystem() {
             dragState = {
                 element: artifact,
                 offsetX: touch.clientX - rect.left,
-                offsetY: touch.clientY - rect.top
+                offsetY: touch.clientY - rect.top,
+                startX: touch.clientX,
+                startY: touch.clientY
             };
 
             mouseDownPos = { x: touch.clientX, y: touch.clientY };
-            hasMoved = false;
 
             artifact.style.zIndex = ++zCounter;
             artifact.classList.add('dragging');
@@ -150,42 +157,18 @@ function initDragSystem() {
 
         if (artifact.tagName === 'A') {
             artifact.addEventListener('click', function(e) {
-                if (hasMoved) {
-                    e.preventDefault();
+                if (mouseDownPos) {
+                    const currentPos = { x: e.clientX, y: e.clientY };
+                    const distance = Math.sqrt(
+                        Math.pow(currentPos.x - mouseDownPos.x, 2) +
+                        Math.pow(currentPos.y - mouseDownPos.y, 2)
+                    );
+                    if (distance > 5) {
+                        e.preventDefault();
+                    }
                 }
             });
         }
-
-        const parentLink = artifact.parentElement;
-        if (parentLink && parentLink.tagName === 'A') {
-            parentLink.addEventListener('click', function(e) {
-                if (hasMoved) {
-                    e.preventDefault();
-                }
-            });
-        }
-
-        artifact.addEventListener('mouseup', function() {
-            if (dragState && dragState.element === artifact) {
-                artifact.classList.remove('dragging');
-                artifact.style.transform = 'scale(1.0)';
-                artifact.style.transition = 'transform 0.2s';
-                setTimeout(() => {
-                    artifact.style.transition = '';
-                }, 200);
-            }
-        });
-
-        artifact.addEventListener('touchend', function() {
-            if (dragState && dragState.element === artifact) {
-                artifact.classList.remove('dragging');
-                artifact.style.transform = 'scale(1.0)';
-                artifact.style.transition = 'transform 0.2s';
-                setTimeout(() => {
-                    artifact.style.transition = '';
-                }, 200);
-            }
-        });
     });
 
     document.addEventListener('mousemove', function(e) {
@@ -193,8 +176,6 @@ function initDragSystem() {
 
         const artifact = dragState.element;
         const rect = artifact.getBoundingClientRect();
-        const canvas = document.getElementById('canvas') || document.body;
-        const canvasRect = canvas.getBoundingClientRect();
 
         let newLeft = e.clientX - dragState.offsetX;
         let newTop = e.clientY - dragState.offsetY;
@@ -209,29 +190,6 @@ function initDragSystem() {
 
         artifact.style.left = newLeft + 'px';
         artifact.style.top = newTop + 'px';
-
-        if (e.clientX !== dragState.startX || e.clientY !== dragState.startY) {
-            const moveDistance = Math.sqrt(
-                Math.pow(e.clientX - (dragState.startX || e.clientX), 2) +
-                Math.pow(e.clientY - (dragState.startY || e.clientY), 2)
-            );
-            if (moveDistance > 5) {
-                artifacts.forEach(art => {
-                    if (art === artifact || art.parentElement === artifact || art.contains(artifact)) {
-                        const mouseDownPosCheck = { x: e.clientX, y: e.clientY };
-                        if (Math.abs(mouseDownPosCheck.x - (dragState.startX || e.clientX)) > 5 ||
-                            Math.abs(mouseDownPosCheck.y - (dragState.startY || e.clientY)) > 5) {
-                            art.dataset.hasMoved = 'true';
-                        }
-                    }
-                });
-            }
-        }
-
-        if (!dragState.startX) {
-            dragState.startX = e.clientX;
-            dragState.startY = e.clientY;
-        }
 
         e.preventDefault();
     });
@@ -263,28 +221,7 @@ function initDragSystem() {
     document.addEventListener('mouseup', function(e) {
         if (dragState) {
             const artifact = dragState.element;
-            const moveDistance = dragState.startX && dragState.startY ? Math.sqrt(
-                Math.pow(e.clientX - dragState.startX, 2) +
-                Math.pow(e.clientY - dragState.startY, 2)
-            ) : 0;
-
-            if (moveDistance > 5) {
-                artifacts.forEach(art => {
-                    if (art === artifact || art.contains(artifact)) {
-                        let current = art;
-                        while (current) {
-                            if (current.tagName === 'A') {
-                                current.dataset.dragMoved = 'true';
-                                setTimeout(() => {
-                                    delete current.dataset.dragMoved;
-                                }, 100);
-                            }
-                            current = current.parentElement;
-                        }
-                    }
-                });
-            }
-
+            
             artifact.classList.remove('dragging');
             artifact.style.transform = 'scale(1.0)';
             artifact.style.transition = 'transform 0.2s';
@@ -299,6 +236,7 @@ function initDragSystem() {
     document.addEventListener('touchend', function() {
         if (dragState) {
             const artifact = dragState.element;
+            
             artifact.classList.remove('dragging');
             artifact.style.transform = 'scale(1.0)';
             artifact.style.transition = 'transform 0.2s';
@@ -307,16 +245,6 @@ function initDragSystem() {
             }, 200);
 
             dragState = null;
-        }
-    });
-
-    artifacts.forEach(artifact => {
-        if (artifact.tagName === 'A') {
-            artifact.addEventListener('click', function(e) {
-                if (artifact.dataset.dragMoved === 'true') {
-                    e.preventDefault();
-                }
-            });
         }
     });
 }
