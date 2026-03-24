@@ -2,7 +2,7 @@ window.PORTFOLIO_DATA = {
   profile: {
     name: "Jack Sutera",
     title: "Software Engineer",
-    bio: "CS student at Binghamton University graduating May 2026. I build full-stack systems and robotics software. Currently interning at BuzzHive, working with their databases and mobile apps.",
+    bio: "CS student at Binghamton University graduating May 2026. I build full-stack systems and work with databases. Currently interning at BuzzHive, working with their databases and mobile apps.",
     github: "https://github.com/gkmedic",
     linkedin: "https://linkedin.com/in/jack-sutera",
     email: "jas9505@gmail.com",
