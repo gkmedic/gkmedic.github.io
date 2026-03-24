@@ -109,7 +109,12 @@ function initDragSystem() {
         let mouseDownPos = null;
 
         artifact.addEventListener('mousedown', function(e) {
-            if (e.target.closest('a:not(.artifact)') || e.target.closest('button')) {
+            if (e.target.closest('.btn-primary, .btn-ghost')) {
+                return;
+            }
+            
+            const clickedLink = e.target.closest('a');
+            if (clickedLink && clickedLink !== artifact && !artifact.contains(clickedLink)) {
                 return;
             }
 
@@ -129,10 +134,16 @@ function initDragSystem() {
             artifact.style.transform = 'scale(1.02)';
 
             e.preventDefault();
+            e.stopPropagation();
         });
 
         artifact.addEventListener('touchstart', function(e) {
-            if (e.target.closest('a:not(.artifact)') || e.target.closest('button')) {
+            if (e.target.closest('.btn-primary, .btn-ghost')) {
+                return;
+            }
+            
+            const clickedLink = e.target.closest('a');
+            if (clickedLink && clickedLink !== artifact && !artifact.contains(clickedLink)) {
                 return;
             }
 
@@ -153,6 +164,7 @@ function initDragSystem() {
             artifact.style.transform = 'scale(1.02)';
 
             e.preventDefault();
+            e.stopPropagation();
         });
 
         if (artifact.tagName === 'A') {

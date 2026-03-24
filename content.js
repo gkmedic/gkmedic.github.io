@@ -17,7 +17,7 @@ window.PORTFOLIO_DATA = {
       description: "2D autonomous navigation simulator with RRT* path planning and real-time telemetry logging.",
       detailPage: "./projects/pathfinder.html",
       githubUrl: "https://github.com/gkmedic/pathfinder-sim",
-      year: "2024"
+      year: "2026"
     }
   ],
   certifications: [
